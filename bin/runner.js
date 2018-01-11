@@ -183,6 +183,10 @@ function forFiles(config, files){
 }
 
 function serial(xs, f, done) {
+  if (xs.length === 0) {
+    return done();
+  }
+
   var run = function(x, rest) {
     f(x, function() {
       if (rest.length > 0) {

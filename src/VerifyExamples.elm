@@ -4,6 +4,8 @@ import Cmd.Util as Cmd
 import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, list, string)
 import Platform
 import VerifyExamples.Compiler as Compiler
+import VerifyExamples.Elm as Elm
+import VerifyExamples.Markdown as Markdown
 import VerifyExamples.ModuleName as ModuleName exposing (ModuleName)
 import VerifyExamples.Parser as Parser
 import VerifyExamples.Warning as Warning exposing (Warning)
@@ -57,8 +59,8 @@ decoder =
 type Msg
     = ReadElm String
     | ReadMarkdown String
-    | CompileModule ElmCompileInfo
-    | CompileMarkdown MarkdownCompileInfo
+    | CompileElm Elm.CompileInfo
+    | CompileMarkdown Markdown.CompileInfo
 
 
 update : Msg -> Cmd Msg
@@ -70,7 +72,7 @@ update msg =
         ReadMarkdown test ->
             readMarkdown test
 
-        CompileModule info ->
+        CompileElm info ->
             info
                 |> compileModule
                 |> sendResult (ModuleName.toString info.moduleName)
@@ -81,7 +83,7 @@ update msg =
                 |> sendResult info.filePath
 
 
-compileModule : ElmCompileInfo -> ( List Warning, List ( ModuleName, String ) )
+compileModule : Elm.CompileInfo -> ( List Warning, List ( ModuleName, String ) )
 compileModule { moduleName, fileText, ignoredWarnings } =
     let
         parsed =
@@ -92,7 +94,7 @@ compileModule { moduleName, fileText, ignoredWarnings } =
     )
 
 
-compileMarkdown : MarkdownCompileInfo -> ( List Warning, List ( ModuleName, String ) )
+compileMarkdown : Markdown.CompileInfo -> ( List Warning, List ( ModuleName, String ) )
 compileMarkdown info =
     -- TODO
     ( [], [] )
@@ -139,8 +141,8 @@ port warn : ( String, List String ) -> Cmd msg
 subscriptions : () -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ generateModuleVerifyExamples (runDecoder decodeElmCompileInfo >> CompileModule)
-        , generateMarkdownVerifyExamples (runDecoder decodeMarkdownCompileInfo >> CompileMarkdown)
+        [ generateModuleVerifyExamples (runDecoder Elm.decodeCompileInfo >> CompileElm)
+        , generateMarkdownVerifyExamples (runDecoder Markdown.decodeCompileInfo >> CompileMarkdown)
         ]
 
 
@@ -152,35 +154,3 @@ runDecoder decoder value =
 
         Err err ->
             Debug.crash "TODO"
-
-
-type alias ElmCompileInfo =
-    { moduleName : ModuleName
-    , fileText : String
-    , ignoredWarnings : List Ignored
-    }
-
-
-decodeElmCompileInfo : Decoder ElmCompileInfo
-decodeElmCompileInfo =
-    Decode.map3 ElmCompileInfo
-        (field "moduleName" string
-            |> Decode.map ModuleName.fromString
-        )
-        (field "fileText" string)
-        (field "ignoredWarnings" Ignored.decode)
-
-
-type alias MarkdownCompileInfo =
-    { filePath : String
-    , fileText : String
-    , ignoredWarnings : List Ignored
-    }
-
-
-decodeMarkdownCompileInfo : Decoder MarkdownCompileInfo
-decodeMarkdownCompileInfo =
-    Decode.map3 MarkdownCompileInfo
-        (field "filePath" string)
-        (field "fileText" string)
-        (field "ignoredWarnings" Ignored.decode)
