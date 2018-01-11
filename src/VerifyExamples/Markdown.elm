@@ -20,7 +20,7 @@ type alias CompileInfo =
 parseComments : String -> List Comment
 parseComments =
     -- TODO
-    Comment.parse
+    always []
 
 
 decodeCompileInfo : Decoder CompileInfo

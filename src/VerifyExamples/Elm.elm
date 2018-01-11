@@ -6,7 +6,9 @@ module VerifyExamples.Elm
         )
 
 import Json.Decode as Decode exposing (Decoder, Value, field, string)
-import VerifyExamples.Comment as Comment exposing (Comment)
+import Regex exposing (HowMany(..), Regex)
+import Regex.Util exposing (newline)
+import VerifyExamples.Comment as Comment exposing (Comment(..))
 import VerifyExamples.ModuleName as ModuleName exposing (ModuleName)
 import VerifyExamples.Warning.Ignored as Ignored exposing (Ignored)
 
@@ -20,8 +22,34 @@ type alias CompileInfo =
 
 parseComments : String -> List Comment
 parseComments =
-    -- move that code here
-    Comment.parse
+    Regex.find All commentRegex
+        >> List.filterMap (toComment << .submatches)
+
+
+toComment : List (Maybe String) -> Maybe Comment
+toComment matches =
+    case matches of
+        (Just comment) :: _ :: Nothing :: _ ->
+            Just (ModuleDoc comment)
+
+        (Just comment) :: _ :: (Just functionName) :: _ ->
+            Just (FunctionDoc { functionName = functionName, comment = comment })
+
+        _ ->
+            Nothing
+
+
+commentRegex : Regex
+commentRegex =
+    Regex.regex <|
+        String.concat
+            [ "({-[^]*?-})" -- anything between comments
+            , newline
+            , "("
+            , "([^\\s(" ++ newline ++ ")]+)" -- anything that is not a space or newline
+            , "\\s[:=]" -- until ` :` or ` =`
+            , ")?" -- it's possible that we have examples in comment not attached to a function
+            ]
 
 
 decodeCompileInfo : Decoder CompileInfo
