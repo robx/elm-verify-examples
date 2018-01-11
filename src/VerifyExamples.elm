@@ -37,7 +37,7 @@ init flags =
 
 decoder : Decoder (List String)
 decoder =
-    field "tests" (list string)
+    Decode.at [ "tests", "elm" ] (list string)
 
 
 

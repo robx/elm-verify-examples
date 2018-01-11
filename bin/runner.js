@@ -38,7 +38,7 @@ function generate(model, allTestsGenerated) {
   var config = model.config;
   cleanup(model);
 
-  if (config.tests.length === 0){
+  if (config.tests.elm.length === 0){
     if (model.args.warn) {
       warn('No tests listed! Modify your elm-verify-examples.json file to include modules');
       if (model.args.failOnWarn) process.exit(1);
@@ -87,7 +87,7 @@ function generate(model, allTestsGenerated) {
   app.ports.writeFiles.subscribe(function(data) {
     serial(data, writeFile(model.testsDocPath), function() {
         writtenTests = writtenTests + 1;
-        if (writtenTests === config.tests.length && allTestsGenerated) {
+        if (writtenTests === config.tests.elm.length && allTestsGenerated) {
           allTestsGenerated(warnings);
         }
     });
@@ -155,7 +155,8 @@ function forFiles(config, files){
     return config;
   }
 
-  config.tests = files.filter(
+  // TODO: support specifying markdown files here
+  config.tests.elm = files.filter(
     function(v){ return v.endsWith('.elm'); }
   ).map(elmPathToModule(config.root, config.testsPath));
 

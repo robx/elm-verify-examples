@@ -1,12 +1,17 @@
 {
   "root": "../src",
-  "tests": [
-    "Mock",
-    "Mock.Foo.Bar.Moo",
-    "Robustness",
-    "Failing",
-    "Todo"
-  ],
+  "tests": {
+    "elm": [
+      "Mock",
+      "Mock.Foo.Bar.Moo",
+      "Robustness",
+      "Failing",
+      "Todo"
+    ],
+    "markdown": [
+      "README.md"
+    ]
+  },
   "ignoreWarnings": {
     "Mock.Foo.Bar.Moo": [
       {
