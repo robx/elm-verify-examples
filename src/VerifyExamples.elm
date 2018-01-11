@@ -71,24 +71,18 @@ update msg =
             readMarkdown test
 
         CompileModule info ->
-            case generateTests info of
-                ( warnings, compiled ) ->
-                    Cmd.batch
-                        [ compiled
-                            |> List.map (Tuple.mapFirst ModuleName.toString)
-                            |> writeFiles
-                        , warnings
-                            |> List.map Warning.toString
-                            |> curry warn (ModuleName.toString info.moduleName)
-                        ]
+            info
+                |> compileModule
+                |> sendResult (ModuleName.toString info.moduleName)
 
         CompileMarkdown info ->
-            -- TODO
-            Cmd.none
+            info
+                |> compileMarkdown
+                |> sendResult info.filePath
 
 
-generateTests : ElmCompileInfo -> ( List Warning, List ( ModuleName, String ) )
-generateTests { moduleName, fileText, ignoredWarnings } =
+compileModule : ElmCompileInfo -> ( List Warning, List ( ModuleName, String ) )
+compileModule { moduleName, fileText, ignoredWarnings } =
     let
         parsed =
             Parser.parse fileText
@@ -96,6 +90,24 @@ generateTests { moduleName, fileText, ignoredWarnings } =
     ( Warning.warnings ignoredWarnings parsed
     , List.concatMap (Compiler.compile moduleName) parsed.testSuites
     )
+
+
+compileMarkdown : MarkdownCompileInfo -> ( List Warning, List ( ModuleName, String ) )
+compileMarkdown info =
+    -- TODO
+    ( [], [] )
+
+
+sendResult : String -> ( List Warning, List ( ModuleName, String ) ) -> Cmd msg
+sendResult sourceName ( warnings, compiled ) =
+    Cmd.batch
+        [ compiled
+            |> List.map (Tuple.mapFirst ModuleName.toString)
+            |> writeFiles
+        , warnings
+            |> List.map Warning.toString
+            |> curry warn sourceName
+        ]
 
 
 
