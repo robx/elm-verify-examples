@@ -94,9 +94,17 @@ compileModule { moduleName, fileText, ignoredWarnings } =
 
 
 compileMarkdown : Markdown.CompileInfo -> ( List Warning, List ( ModuleName, String ) )
-compileMarkdown info =
-    -- TODO
-    ( [], [] )
+compileMarkdown { filePath, fileText, ignoredWarnings } =
+    let
+        parsed =
+            Parser.parse Markdown.parseComments fileText
+
+        moduleName =
+            Markdown.moduleName filePath
+    in
+    ( Warning.warnings ignoredWarnings parsed
+    , List.concatMap (Compiler.compile moduleName) parsed.testSuites
+    )
 
 
 sendResult : String -> ( List Warning, List ( ModuleName, String ) ) -> Cmd msg
