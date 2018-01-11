@@ -74,21 +74,21 @@ function generate(model, allTestsGenerated) {
 
   app.ports.readMarkdown.subscribe(function(filePath) {
     fs.readFile(
-        filePath,
-        "utf8",
-        function(err, fileText) {
-      if (err) {
-        console.error(err);
-        process.exit(-1);
-        return;
-      }
-          app.ports.generateMarkdownVerifyExamples.send(
+      filePath,
+      "utf8",
+      function(err, fileText) {
+        if (err) {
+          console.error(err);
+          process.exit(-1);
+          return;
+        }
+        app.ports.generateMarkdownVerifyExamples.send(
           { filePath: filePath,
             fileText: fileText,
             ignoredWarnings: ignoredWarnings(config.ignoreWarnings, filePath)
           }
         );
-    });
+      });
   });
 
   var warnings = [];

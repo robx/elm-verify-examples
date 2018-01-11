@@ -9,7 +9,6 @@ import VerifyExamples.Markdown as Markdown
 import VerifyExamples.ModuleName as ModuleName exposing (ModuleName)
 import VerifyExamples.Parser as Parser
 import VerifyExamples.Warning as Warning exposing (Warning)
-import VerifyExamples.Warning.Ignored as Ignored exposing (Ignored)
 
 
 main : Program Value () Msg
@@ -87,7 +86,7 @@ compileModule : Elm.CompileInfo -> ( List Warning, List ( ModuleName, String ) )
 compileModule { moduleName, fileText, ignoredWarnings } =
     let
         parsed =
-            Parser.parse fileText
+            Parser.parse Elm.parseComments fileText
     in
     ( Warning.warnings ignoredWarnings parsed
     , List.concatMap (Compiler.compile moduleName) parsed.testSuites

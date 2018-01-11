@@ -13,15 +13,14 @@ type alias Parsed =
     }
 
 
-parse : String -> Parsed
-parse value =
+parse : (String -> List Comment) -> String -> Parsed
+parse commentParser source =
     let
         comments =
-            value
-                |> Comment.parse
+            commentParser source
     in
     { exposedApi =
-        ExposedApi.parse value <|
+        ExposedApi.parse source <|
             List.filterMap Comment.function comments
     , testSuites =
         comments

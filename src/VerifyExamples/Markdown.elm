@@ -2,12 +2,11 @@ module VerifyExamples.Markdown
     exposing
         ( CompileInfo
         , decodeCompileInfo
-        , parse
+        , parseComments
         )
 
 import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, list, string)
-import VerifyExamples.ModuleName as ModuleName exposing (ModuleName)
-import VerifyExamples.Parser as Parser exposing (Parsed)
+import VerifyExamples.Comment as Comment exposing (Comment)
 import VerifyExamples.Warning.Ignored as Ignored exposing (Ignored)
 
 
@@ -18,10 +17,10 @@ type alias CompileInfo =
     }
 
 
-parse : CompileInfo -> Parsed
-parse { fileText } =
-    -- FIXME
-    Parser.parse fileText
+parseComments : String -> List Comment
+parseComments =
+    -- TODO
+    Comment.parse
 
 
 decodeCompileInfo : Decoder CompileInfo
