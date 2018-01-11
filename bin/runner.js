@@ -48,7 +48,7 @@ function generate(model, allTestsGenerated) {
 
   var app = Elm.VerifyExamples.worker(config);
 
-  app.ports.readFile.subscribe(function(moduleName) {
+  app.ports.readElm.subscribe(function(moduleName) {
     var pathToModule = path.join(
       config.testsPath,
       config.root,
@@ -67,6 +67,25 @@ function generate(model, allTestsGenerated) {
           { moduleName: moduleName,
             fileText: fileText,
             ignoredWarnings: ignoredWarnings(config.ignoreWarnings, moduleName)
+          }
+        );
+    });
+  });
+
+  app.ports.readMarkdown.subscribe(function(filePath) {
+    fs.readFile(
+        filePath,
+        "utf8",
+        function(err, fileText) {
+      if (err) {
+        console.error(err);
+        process.exit(-1);
+        return;
+      }
+          app.ports.generateMarkdownVerifyExamples.send(
+          { filePath: filePath,
+            fileText: fileText,
+            ignoredWarnings: ignoredWarnings(config.ignoreWarnings, filePath)
           }
         );
     });
@@ -94,10 +113,10 @@ function generate(model, allTestsGenerated) {
   });
 }
 
-function ignoredWarnings(ignores, moduleName) {
+function ignoredWarnings(ignores, source) {
   if (typeof ignores === "undefined") return [];
-  if (typeof ignores[moduleName] === "undefined") return [];
-  return ignores[moduleName];
+  if (typeof ignores[source] === "undefined") return [];
+  return ignores[source];
 }
 
 function runElmTest(model){

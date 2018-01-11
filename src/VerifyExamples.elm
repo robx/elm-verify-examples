@@ -27,17 +27,27 @@ init : Value -> Cmd Msg
 init flags =
     case decodeValue decoder flags of
         Ok tests ->
-            tests
-                |> List.map (ReadTest >> Cmd.perform)
-                |> Cmd.batch
+            Cmd.batch <|
+                List.append
+                    (List.map (ReadElm >> Cmd.perform) tests.elm)
+                    (List.map (ReadMarkdown >> Cmd.perform) tests.markdown)
 
         Err err ->
             Debug.crash err
 
 
-decoder : Decoder (List String)
+type alias Sources =
+    { elm : List String
+    , markdown : List String
+    }
+
+
+decoder : Decoder Sources
 decoder =
-    Decode.at [ "tests", "elm" ] (list string)
+    field "tests" <|
+        Decode.map2 Sources
+            (field "elm" (list string))
+            (field "markdown" (list string))
 
 
 
@@ -45,15 +55,20 @@ decoder =
 
 
 type Msg
-    = ReadTest String
-    | CompileModule CompileInfo
+    = ReadElm String
+    | ReadMarkdown String
+    | CompileModule ElmCompileInfo
+    | CompileMarkdown MarkdownCompileInfo
 
 
 update : Msg -> Cmd Msg
 update msg =
     case msg of
-        ReadTest test ->
-            readFile test
+        ReadElm test ->
+            readElm test
+
+        ReadMarkdown test ->
+            readMarkdown test
 
         CompileModule info ->
             case generateTests info of
@@ -67,8 +82,12 @@ update msg =
                             |> curry warn (ModuleName.toString info.moduleName)
                         ]
 
+        CompileMarkdown info ->
+            -- TODO
+            Cmd.none
 
-generateTests : CompileInfo -> ( List Warning, List ( ModuleName, String ) )
+
+generateTests : ElmCompileInfo -> ( List Warning, List ( ModuleName, String ) )
 generateTests { moduleName, fileText, ignoredWarnings } =
     let
         parsed =
@@ -83,13 +102,19 @@ generateTests { moduleName, fileText, ignoredWarnings } =
 -- PORTS
 
 
-port readFile : String -> Cmd msg
+port readElm : String -> Cmd msg
+
+
+port readMarkdown : String -> Cmd msg
 
 
 port writeFiles : List ( String, String ) -> Cmd msg
 
 
 port generateModuleVerifyExamples : (Value -> msg) -> Sub msg
+
+
+port generateMarkdownVerifyExamples : (Value -> msg) -> Sub msg
 
 
 port warn : ( String, List String ) -> Cmd msg
@@ -101,29 +126,49 @@ port warn : ( String, List String ) -> Cmd msg
 
 subscriptions : () -> Sub Msg
 subscriptions _ =
-    generateModuleVerifyExamples
-        (\value ->
-            case decodeValue decodeCompileInfo value of
-                Ok info ->
-                    CompileModule info
-
-                Err err ->
-                    Debug.crash "TODO"
-        )
+    Sub.batch
+        [ generateModuleVerifyExamples (runDecoder decodeElmCompileInfo >> CompileModule)
+        , generateMarkdownVerifyExamples (runDecoder decodeMarkdownCompileInfo >> CompileMarkdown)
+        ]
 
 
-type alias CompileInfo =
+runDecoder : Decoder a -> Value -> a
+runDecoder decoder value =
+    case decodeValue decoder value of
+        Ok info ->
+            info
+
+        Err err ->
+            Debug.crash "TODO"
+
+
+type alias ElmCompileInfo =
     { moduleName : ModuleName
     , fileText : String
     , ignoredWarnings : List Ignored
     }
 
 
-decodeCompileInfo : Decoder CompileInfo
-decodeCompileInfo =
-    Decode.map3 CompileInfo
+decodeElmCompileInfo : Decoder ElmCompileInfo
+decodeElmCompileInfo =
+    Decode.map3 ElmCompileInfo
         (field "moduleName" string
             |> Decode.map ModuleName.fromString
         )
+        (field "fileText" string)
+        (field "ignoredWarnings" Ignored.decode)
+
+
+type alias MarkdownCompileInfo =
+    { filePath : String
+    , fileText : String
+    , ignoredWarnings : List Ignored
+    }
+
+
+decodeMarkdownCompileInfo : Decoder MarkdownCompileInfo
+decodeMarkdownCompileInfo =
+    Decode.map3 MarkdownCompileInfo
+        (field "filePath" string)
         (field "fileText" string)
         (field "ignoredWarnings" Ignored.decode)
