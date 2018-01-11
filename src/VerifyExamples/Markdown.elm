@@ -7,7 +7,9 @@ module VerifyExamples.Markdown
         )
 
 import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, list, string)
-import VerifyExamples.Comment as Comment exposing (Comment)
+import Regex exposing (HowMany(..), Regex)
+import Regex.Util exposing (newline)
+import VerifyExamples.Comment as Comment exposing (Comment(..))
 import VerifyExamples.ModuleName as ModuleName exposing (ModuleName)
 import VerifyExamples.Warning.Ignored as Ignored exposing (Ignored)
 
@@ -28,8 +30,30 @@ moduleName filePath =
 
 parseComments : String -> List Comment
 parseComments =
-    -- TODO
-    always []
+    Regex.find All commentRegex
+        >> List.filterMap (toComment << .submatches)
+
+
+toComment : List (Maybe String) -> Maybe Comment
+toComment matches =
+    case matches of
+        (Just comment) :: [] ->
+            Just (ModuleDoc comment)
+
+        _ ->
+            Nothing
+
+
+commentRegex : Regex
+commentRegex =
+    Regex.regex <|
+        String.concat
+            [ "```elm"
+            , newline
+            , "([^]*?)"
+            , newline
+            , "```"
+            ]
 
 
 decodeCompileInfo : Decoder CompileInfo
