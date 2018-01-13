@@ -43,7 +43,7 @@ commentRegex : Regex
 commentRegex =
     Regex.regex <|
         String.concat
-            [ "({-[^]*?-})" -- anything between comments
+            [ "{-([^]*?)-}" -- anything between comments
             , newline
             , "("
             , "([^\\s(" ++ newline ++ ")]+)" -- anything that is not a space or newline
