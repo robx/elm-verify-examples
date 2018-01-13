@@ -83,27 +83,24 @@ update msg =
 
 
 compileModule : Elm.CompileInfo -> ( List Warning, List ( ModuleName, String ) )
-compileModule { moduleName, fileText, ignoredWarnings } =
+compileModule compileInfo =
     let
         parsed =
-            Parser.parse Elm.parseComments fileText
+            Parser.parse Elm.parseComments compileInfo.fileText
     in
-    ( Warning.warnings ignoredWarnings parsed
-    , List.concatMap (Compiler.compile moduleName) parsed.testSuites
+    ( Warning.warnings compileInfo.ignoredWarnings parsed
+    , List.concatMap (Compiler.compileElm compileInfo) parsed.testSuites
     )
 
 
 compileMarkdown : Markdown.CompileInfo -> ( List Warning, List ( ModuleName, String ) )
-compileMarkdown { filePath, fileText, ignoredWarnings } =
+compileMarkdown compileInfo =
     let
         parsed =
-            Parser.parse Markdown.parseComments fileText
-
-        moduleName =
-            Markdown.moduleName filePath
+            Parser.parse Markdown.parseComments compileInfo.fileText
     in
-    ( Warning.warnings ignoredWarnings parsed
-    , List.concatMap (Compiler.compile moduleName) parsed.testSuites
+    ( Warning.warnings compileInfo.ignoredWarnings parsed
+    , List.concatMap (Compiler.compileMarkdown compileInfo) parsed.testSuites
     )
 
 

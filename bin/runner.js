@@ -83,7 +83,7 @@ function generate(model, allTestsGenerated) {
           return;
         }
         app.ports.generateMarkdownVerifyExamples.send(
-          { filePath: filePath,
+          { filePath: cleanMarkdownPath(filePath),
             fileText: fileText,
             ignoredWarnings: ignoredWarnings(config.ignoreWarnings, filePath)
           }
@@ -255,6 +255,14 @@ function elmPathToModule(root, testsPath) {
 
 function elmModuleToPath(moduleName){
   return moduleName.replace(/\./g, "/") + ".elm";
+}
+
+function cleanMarkdownPath(pathName) {
+  var relativePath = path.relative(path.resolve(), pathName)
+  if (relativePath.startsWith("./")) {
+    relativePath = relativePath.substr(2);
+  }
+  return relativePath;
 }
 
 module.exports = {

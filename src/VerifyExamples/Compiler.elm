@@ -1,11 +1,28 @@
-module VerifyExamples.Compiler exposing (compile)
+module VerifyExamples.Compiler exposing (compileElm, compileMarkdown)
 
+import Regex
 import String
-import String.Util exposing (escape, indent, indentLines, unlines)
+import String.Util exposing (capitalizeFirst, escape, indent, indentLines, unlines)
+import VerifyExamples.Elm as Elm
 import VerifyExamples.Function as Function exposing (Function)
+import VerifyExamples.Markdown as Markdown
 import VerifyExamples.ModuleName as ModuleName exposing (ModuleName)
 import VerifyExamples.Test as Test exposing (Test)
 import VerifyExamples.TestSuite as TestSuite exposing (TestSuite)
+
+
+compileElm : Elm.CompileInfo -> TestSuite -> List ( ModuleName, String )
+compileElm { moduleName } suite =
+    compile
+        moduleName
+        { suite | imports = sourceImport moduleName :: suite.imports }
+
+
+compileMarkdown : Markdown.CompileInfo -> TestSuite -> List ( ModuleName, String )
+compileMarkdown { filePath } suite =
+    compile
+        (markdownModuleName filePath)
+        suite
 
 
 compile : ModuleName -> TestSuite -> List ( ModuleName, String )
@@ -16,12 +33,28 @@ compile moduleName suite =
         List.indexedMap (compileTestPerFunction moduleName suite) suite.tests
 
 
+sourceImport : ModuleName -> String
+sourceImport moduleName =
+    "import " ++ ModuleName.toString moduleName ++ " exposing (..)"
+
+
+markdownModuleName : String -> ModuleName
+markdownModuleName filePath =
+    filePath
+        |> Regex.replace Regex.All (Regex.regex "\\.md$") (always "")
+        |> String.split "/"
+        |> List.map capitalizeFirst
+        |> (::) "MARKDOWN"
+        |> String.join "."
+        |> ModuleName.fromString
+
+
 compileTestPerModule : ModuleName -> TestSuite -> ( ModuleName, String )
 compileTestPerModule moduleName suite =
     ( moduleName
     , unlines
         [ moduleHeader suite moduleName
-        , imports suite moduleName
+        , imports suite
         , suite.tests
             |> List.indexedMap spec
             |> todoIfEmpty moduleName
@@ -39,7 +72,7 @@ compileTestPerFunction moduleName suite index test =
     ( extendedModuleName
     , unlines
         [ moduleHeader suite extendedModuleName
-        , imports suite moduleName
+        , imports suite
         , unlines suite.types
         , ""
         , suite.helperFunctions
@@ -62,13 +95,11 @@ moduleHeader { imports } moduleName =
         ]
 
 
-imports : TestSuite -> ModuleName -> String
-imports { imports } moduleName =
+imports : TestSuite -> String
+imports { imports } =
     unlines
         [ "import Test"
         , "import Expect"
-        , "import " ++ ModuleName.toString moduleName ++ " exposing(..)"
-        , ""
         , unlines imports
         , ""
         ]

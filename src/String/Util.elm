@@ -1,5 +1,6 @@
-module String.Util exposing (escape, indent, indentLines, unlines)
+module String.Util exposing (capitalizeFirst, escape, indent, indentLines, unlines)
 
+import Char
 import Regex exposing (HowMany(..), Regex, regex)
 import Regex.Util exposing (replaceAllWith)
 
@@ -50,6 +51,23 @@ indentLines count =
     String.lines
         >> List.map (indent count)
         >> unlines
+
+
+{-| Capitalizes the first letter of a string.
+
+    capitalizeFirst "hello" --> "Hello"
+
+    capitalizeFirst "" --> ""
+
+-}
+capitalizeFirst : String -> String
+capitalizeFirst str =
+    case String.uncons str of
+        Just ( firstChar, rest ) ->
+            String.cons (Char.toUpper firstChar) rest
+
+        _ ->
+            str
 
 
 escape : String -> String
